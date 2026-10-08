@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Trang web tĩnh kiểm tra triển khai máy chủ VPS - DevOps Fundamentals IT-209">
+  <meta name="theme-color" content="#0a0f1d">
+  <title>VPS Deployment Verification | DevOps Fundamentals</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-primary: #0a0f1d;
+      --bg-secondary: #0f172a;
+      --bg-card: rgba(19, 30, 49, 0.72);
+      --bg-card-hover: rgba(26, 41, 66, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.25);
+      
+      --accent: #38bdf8;
+      --accent-rgb: 56, 189, 248;
+      --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+      
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(129, 140, 248, 0.10) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0%, transparent 100%);
+      background-attachment: fixed;
+    }
+
+    /* Ambient Background Grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10, 15, 29, 0.8);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #050a14;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .status-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 3.5rem 0 2rem;
+      text-align: center;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+
+    .gradient-text {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      max-width: 680px;
+      margin: 0 auto 2rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    /* Metrics Grid */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .metric-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      word-break: break-all;
+    }
+
+    .metric-sub {
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-top: 0.35rem;
+    }
+
+    /* Main Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (max-width: 860px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-lg);
+      transition: border-color 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Interactive Terminal */
+    .terminal-window {
+      background: #050811;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    .terminal-bar {
+      background: #090e1c;
+      padding: 0.6rem 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+
+    .terminal-title {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .terminal-body {
+      padding: 1rem;
+      min-height: 240px;
+      max-height: 320px;
+      overflow-y: auto;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .terminal-line {
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .cmd-prompt {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .cmd-success {
+      color: var(--success);
+    }
+
+    .cmd-highlight {
+      color: #fbbf24;
+    }
+
+    .terminal-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .terminal-input {
+      background: transparent;
+      border: none;
+      color: #f8fafc;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+      flex: 1;
+    }
+
+    .quick-cmds {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+    }
+
+    .btn-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-chip:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent);
+      color: var(--text-main);
+    }
+
+    /* Checklist Section */
+    .checklist-progress-wrap {
+      margin-bottom: 1.25rem;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.4rem;
+      color: var(--text-muted);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 9999px;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .task-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .task-item.completed {
+      border-color: rgba(16, 185, 129, 0.25);
+      background: rgba(16, 185, 129, 0.03);
+    }
+
+    .task-item input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--text-dim);
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      margin-top: 3px;
+      display: grid;
+      place-content: center;
+      transition: all 0.2s;
+    }
+
+    .task-item input[type="checkbox"]:checked {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .task-item input[type="checkbox"]:checked::before {
+      content: "✓";
+      color: #050811;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .task-content {
+      flex: 1;
+    }
+
+    .task-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .task-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .task-item.completed .task-title {
+      text-decoration: line-through;
+      color: var(--text-dim);
+    }
+
+    /* Diagnostics & Tools */
+    .ping-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 1.25rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #040914;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Code Snippet Box */
+    .code-box {
+      background: #050811;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      position: relative;
+    }
+
+    .code-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .btn-copy {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-copy:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    pre code {
+      display: block;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.875rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #0f172a;
+      border: 1px solid var(--accent);
+      color: var(--text-main);
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="container header-content">
+      <a href="#" class="brand">
+        <div class="brand-icon">&gt;_</div>
+        <span>VPS Deploy Hub</span>
+      </a>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="status-badge" id="sslBadge">
+          <span class="status-pulse"></span>
+          <span id="httpStatusText">200 OK | Triển khai thành công</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="container">
+    <section class="hero">
+      <div class="hero-tag">IT-209 DevOps Fundamentals &bull; Session 07</div>
+      <h1>Trang Triển Khai Thử Nghiệm <br><span class="gradient-text">Máy Chủ VPS</span></h1>
+      <p>
+        Nếu bạn đang thấy giao diện này trực tiếp qua IP hoặc Tên miền VPS, website tĩnh của bạn đã được cấu hình và triển khai thành công!
+      </p>
+    </section>
+
+    <!-- Metrics Bar -->
+    <section class="metrics-bar">
+      <div class="metric-card">
+        <span class="metric-label">Máy Chủ / Host</span>
+        <span class="metric-value" id="hostVal">--</span>
+        <span class="metric-sub" id="protocolVal">Giao thức: HTTP</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Địa Chỉ IP Client</span>
+        <span class="metric-value" id="ipVal">Đang kiểm tra...</span>
+        <span class="metric-sub">Phát hiện từ mạng của bạn</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Thời Gian VPS / Client</span>
+        <span class="metric-value" id="timeVal">00:00:00</span>
+        <span class="metric-sub" id="uptimeVal">Uptime phiên: 0s</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Độ Trễ Phản Hồi (Ping)</span>
+        <span class="metric-value" id="pingVal">-- ms</span>
+        <span class="metric-sub" id="pingStatus">Sẵn sàng đo</span>
+      </div>
+    </section>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Card: Interactive Terminal -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span>💻</span> Giả Lập Terminal DevOps
+          </h2>
+          <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">bash &bull; v2.4</span>
+        </div>
+
+        <div class="terminal-window">
+          <div class="terminal-bar">
+            <div class="terminal-dots">
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+            </div>
+            <span class="terminal-title">user@vps-server: ~</span>
+          </div>
+
+          <div class="terminal-body" id="termOutput">
+            <div class="terminal-line"><span class="cmd-prompt">user@vps:~$</span> <span class="cmd-highlight">welcome</span></div>
+            <div class="terminal-line cmd-success">✔ Kết nối tới máy chủ VPS thành công!</div>
+            <div class="terminal-line">Gõ lệnh hoặc bấm nút bên dưới để kiểm tra hệ thống.</div>
+            <div class="terminal-line" style="color: var(--text-dim);">Gõ 'help' để xem danh sách lệnh được hỗ trợ.</div>
+          </div>
+        </div>
+
+        <div class="terminal-input-row" style="margin-top: 0.75rem;">
+          <span class="cmd-prompt" style="font-family: var(--font-mono); font-size: 0.85rem;">user@vps:~$</span>
+          <input type="text" id="termInput" class="terminal-input" placeholder="nhập lệnh (vd: status, uname, nginx -t)..." autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="quick-cmds">
+          <button class="btn-chip" onclick="executeCommand('status')">status</button>
+          <button class="btn-chip" onclick="executeCommand('nginx -t')">nginx -t</button>
+          <button class="btn-chip" onclick="executeCommand('uptime')">uptime</button>
+          <button class="btn-chip" onclick="executeCommand('free -m')">free -m</button>
+          <button class="btn-chip" onclick="executeCommand('df -h')">df -h</button>
+          <button class="btn-chip" onclick="executeCommand('clear')">clear</button>
+        </div>
+      </section>
+
+      <!-- Card: Deployment Checklist -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span>✅</span> Checklist Triển Khai VPS
+          </h2>
+          <span id="checklistPercentage" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">0%</span>
+        </div>
+
+        <div class="checklist-progress-wrap">
+          <div class="progress-info">
+            <span>Tiến độ hoàn thành</span>
+            <span id="progressCount">0/6 hoàn tất</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div class="task-list" id="taskList">
+          <label class="task-item" data-id="step1">
+            <input type="checkbox" onchange="toggleTask(this)">
+            <div class="task-content">
+              <div class="task-title">1. Kết nối SSH vào VPS</div>
+              <div class="task-desc">Sử dụng: <code>ssh root@&lt;vps-ip&gt;</code> hoặc tài khoản sudoer</div>
+            </div>
+          </label>
+
+          <label class="task-item" data-id="step2">
+            <input type="checkbox" onchange="toggleTask(this)">
+            <div class="task-content">
+              <div class="task-title">2. Cập nhật hệ thống & Cài Web Server</div>
+              <div class="task-desc">Chạy <code>apt update &amp;&amp; apt install nginx -y</code></div>
+            </div>
+          </label>
+
+          <label class="task-item" data-id="step3">
+            <input type="checkbox" onchange="toggleTask(this)">
+            <div class="task-content">
+              <div class="task-title">3. Cấu hình Firewall (UFW)</div>
+              <div class="task-desc">Mở cổng HTTP & HTTPS: <code>ufw allow 'Nginx Full'</code> & <code>ufw allow 22</code></div>
+            </div>
+          </label>
+
+          <label class="task-item" data-id="step4">
+            <input type="checkbox" onchange="toggleTask(this)">
+            <div class="task-content">
+              <div class="task-title">4. Tải mã nguồn lên VPS</div>
+              <div class="task-desc">Đưa thư mục web vào <code>/var/www/html/</code> qua SCP/Git/Rsync</div>
+            </div>
+          </label>
+
+          <label class="task-item" data-id="step5">
+            <input type="checkbox" onchange="toggleTask(this)">
+            <div class="task-content">
+              <div class="task-title">5. Kiểm tra Nginx & Phân quyền</div>
+              <div class="task-desc">Chạy <code>nginx -t</code> và gán quyền <code>chown -R www-data:www-data /var/www/html</code></div>
+            </div>
+          </label>
+
+          <label class="task-item" data-id="step6">
+            <input type="checkbox" onchange="toggleTask(this)">
+            <div class="task-content">
+              <div class="task-title">6. Cài đặt SSL miễn phí (Certbot)</div>
+              <div class="task-desc">Bảo mật bằng HTTPS nếu đã trỏ tên miền: <code>certbot --nginx</code></div>
+            </div>
+          </label>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Bottom Row: Diagnostic & Nginx Config Snippet -->
+    <div class="dashboard-grid">
+      
+      <!-- Diagnostic tools -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span>⚡</span> Kiểm Tra Độ Trễ & Kết Nối
+          </h2>
+        </div>
+
+        <div class="ping-box">
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem;">Đo Roundtrip Latency (RTT)</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">Gửi yêu cầu HTTP HEAD tới máy chủ hiện tại</div>
+          </div>
+          <button class="btn-primary" id="btnTestPing" onclick="measurePing()">
+            <span>⚡ Kiểm Tra Ping</span>
+          </button>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+          <h3 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-main);">📌 Mẹo kiểm tra nhanh khi deploy lên VPS:</h3>
+          <ul style="font-size: 0.825rem; color: var(--text-muted); padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li>Nếu không truy cập được qua IP: Kiểm tra Security Group trên Cloud (AWS/DigitalOcean/Linode) và tường lửa <code>ufw status</code>.</li>
+            <li>Nếu gặp lỗi 403 Forbidden: Kiểm tra phân quyền file <code>chmod 755 /var/www/html</code> và file <code>index.html</code>.</li>
+            <li>Nếu Nginx không nhận thay đổi: Chạy <code>sudo systemctl reload nginx</code>.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Nginx Sample Config -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span>⚙️</span> File Cấu Hình Nginx Mẫu
+          </h2>
+        </div>
+
+        <div class="code-box">
+          <div class="code-box-header">
+            <span>/etc/nginx/sites-available/default</span>
+            <button class="btn-copy" onclick="copyNginxConfig()">Sao chép</button>
+          </div>
+          <pre><code id="nginxCode">server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html index.htm;
+
+    server_name _;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # Cache file tĩnh để tối ưu hiệu năng
+    location ~* \.(css|js|png|jpg|svg|ico)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+}</code></pre>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>DevOps Fundamentals &bull; Triển khai ứng dụng tĩnh trên máy chủ đám mây & VPS</p>
+      <div class="footer-links">
+        <a href="#termInput" onclick="document.getElementById('termInput').focus()">Terminal</a>
+        <a href="#taskList">Checklist</a>
+        <a href="#nginxCode">Nginx Config</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast">
+    <span id="toastIcon">✔</span>
+    <span id="toastMsg">Đã sao chép!</span>
+  </div>
+
+  <script>
+    // 1. Initial Host & Environment detection
+    const hostEl = document.getElementById('hostVal');
+    const protocolEl = document.getElementById('protocolVal');
+    const sslBadge = document.getElementById('sslBadge');
+    const httpStatusText = document.getElementById('httpStatusText');
+
+    const currentHost = window.location.host || 'localhost (file)';
+    const currentProtocol = window.location.protocol.replace(':', '').toUpperCase();
+    
+    hostEl.textContent = currentHost;
+    protocolEl.textContent = `Giao thức: ${currentProtocol}`;
+
+    if (window.location.protocol === 'https:') {
+      sslBadge.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+      sslBadge.style.color = '#38bdf8';
+      sslBadge.style.background = 'rgba(56, 189, 248, 0.12)';
+      httpStatusText.textContent = '🔒 200 OK | HTTPS Bảo mật';
+    }
+
+    // 2. Client IP Detection
+    async function fetchClientIP() {
+      const ipEl = document.getElementById('ipVal');
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        if (res.ok) {
+          const data = await res.json();
+          ipEl.textContent = data.ip;
+        } else {
+          ipEl.textContent = 'Kết nối trực tiếp';
+        }
+      } catch (err) {
+        ipEl.textContent = 'Mạng nội bộ / N/A';
+      }
+    }
+    fetchClientIP();
+
+    // 3. Live Clock & Uptime Counter
+    const timeEl = document.getElementById('timeVal');
+    const uptimeEl = document.getElementById('uptimeVal');
+    const startTime = Date.now();
+
+    function updateClock() {
+      const now = new Date();
+      timeEl.textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
+      
+      const seconds = Math.floor((Date.now() - startTime) / 1000);
+      uptimeEl.textContent = `Uptime phiên: ${seconds}s`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 4. Latency / Ping Measurement
+    async function measurePing() {
+      const pingVal = document.getElementById('pingVal');
+      const pingStatus = document.getElementById('pingStatus');
+      const btn = document.getElementById('btnTestPing');
+
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      pingVal.textContent = '...';
+      pingStatus.textContent = 'Đang đo...';
+
+      const t0 = performance.now();
+      try {
+        await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+        const latency = Math.round(performance.now() - t0);
+        pingVal.textContent = `${latency} ms`;
+        if (latency < 50) {
+          pingStatus.textContent = '🟢 Rất tốt (Low latency)';
+        } else if (latency < 150) {
+          pingStatus.textContent = '🟡 Bình thường';
+        } else {
+          pingStatus.textContent = '🟠 Tương đối cao';
+        }
+      } catch (e) {
+        // Fallback for file:// origin
+        const fallbackLatency = Math.floor(Math.random() * 15) + 10;
+        pingVal.textContent = `${fallbackLatency} ms`;
+        pingStatus.textContent = 'Local ping simulated';
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+
+    // 5. Interactive Terminal Simulator
+    const termOutput = document.getElementById('termOutput');
+    const termInput = document.getElementById('termInput');
+
+    const commands = {
+      help: () => [
+        "Các lệnh hỗ trợ:",
+        "  status         - Xem trạng thái máy chủ hiện tại",
+        "  nginx -t       - Kiểm tra tính hợp lệ của file cấu hình Nginx",
+        "  systemctl      - Kiểm tra service Nginx",
+        "  uptime         - Thời gian hoạt động của máy chủ",
+        "  free -m        - Xem thông tin bộ nhớ RAM",
+        "  df -h          - Xem dung lượng ổ cứng",
+        "  uname -a       - Thông tin nhân Linux",
+        "  whoami         - Người dùng hiện tại",
+        "  clear          - Xóa màn hình terminal"
+      ],
+      status: () => [
+        "[+] Máy chủ: " + (window.location.host || "Localhost"),
+        "[+] Trạng thái: ACTIVE (Running)",
+        "[+] Cổng phục vụ: " + (window.location.port || (window.location.protocol === 'https:' ? '443' : '80')),
+        "[+] Web Server: Nginx 1.24 (Ubuntu)",
+        "[+] Kết nối HTTP: 200 OK"
+      ],
+      "nginx -t": () => [
+        "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok",
+        "nginx: configuration file /etc/nginx/nginx.conf test is successful"
+      ],
+      "systemctl": () => [
+        "● nginx.service - A high performance web server and a reverse proxy server",
+        "     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)",
+        "     Active: active (running) since " + new Date().toDateString() + " (running)",
+        "   Main PID: 1042 (nginx)",
+        "      Tasks: 2 (limit: 2338)"
+      ],
+      uptime: () => [
+        " " + new Date().toLocaleTimeString() + " up 14 days, 3:28, 1 user, load average: 0.08, 0.03, 0.01"
+      ],
+      "free -m": () => [
+        "               total        used        free      shared  buff/cache   available",
+        "Mem:            1984         420        1120          14         444        1420",
+        "Swap:           1024           0        1024"
+      ],
+      "df -h": () => [
+        "Filesystem      Size  Used Avail Use% Mounted on",
+        "/dev/vda1        25G  3.8G   20G  16% /",
+        "udev            980M     0  980M   0% /dev",
+        "tmpfs           200M  1.1M  199M   1% /run"
+      ],
+      "uname -a": () => [
+        "Linux vps-devops-node 5.15.0-89-generic #99-Ubuntu SMP x86_64 x86_64 GNU/Linux"
+      ],
+      whoami: () => [
+        "www-data (Deployer Service Account)"
+      ]
+    };
+
+    function appendTerminalLine(text, className = '') {
+      const line = document.createElement('div');
+      line.className = 'terminal-line ' + className;
+      line.textContent = text;
+      termOutput.appendChild(line);
+      termOutput.scrollTop = termOutput.scrollHeight;
+    }
+
+    function executeCommand(rawCmd) {
+      const cmd = rawCmd.trim();
+      if (!cmd) return;
+
+      // Add user prompt
+      const promptLine = document.createElement('div');
+      promptLine.className = 'terminal-line';
+      promptLine.innerHTML = `<span class="cmd-prompt">user@vps:~$</span> <span class="cmd-highlight">${cmd}</span>`;
+      termOutput.appendChild(promptLine);
+
+      if (cmd === 'clear') {
+        termOutput.innerHTML = '';
+        return;
+      }
+
+      const lower = cmd.toLowerCase();
+      if (commands[lower]) {
+        const lines = commands[lower]();
+        lines.forEach(l => appendTerminalLine(l, 'cmd-success'));
+      } else {
+        appendTerminalLine(`bash: ${cmd}: command not found. Gõ 'help' để xem danh sách lệnh.`, 'cmd-danger');
+      }
+
+      termOutput.scrollTop = termOutput.scrollHeight;
+      termInput.value = '';
+    }
+
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        executeCommand(termInput.value);
+      }
+    });
+
+    // 6. Checklist Logic & LocalStorage Persistence
+    const CHECKLIST_STORAGE_KEY = 'vps_deploy_checklist_state';
+
+    function initChecklist() {
+      const saved = JSON.parse(localStorage.getItem(CHECKLIST_STORAGE_KEY) || '{}');
+      const items = document.querySelectorAll('.task-item');
+      items.forEach(item => {
+        const id = item.getAttribute('data-id');
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (saved[id]) {
+          checkbox.checked = true;
+          item.classList.add('completed');
+        }
+      });
+      updateChecklistProgress();
+    }
+
+    function toggleTask(checkbox) {
+      const parent = checkbox.closest('.task-item');
+      if (checkbox.checked) {
+        parent.classList.add('completed');
+      } else {
+        parent.classList.remove('completed');
+      }
+
+      // Save state
+      const items = document.querySelectorAll('.task-item');
+      const state = {};
+      items.forEach(it => {
+        const id = it.getAttribute('data-id');
+        state[id] = it.querySelector('input[type="checkbox"]').checked;
+      });
+      localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(state));
+
+      updateChecklistProgress();
+    }
+
+    function updateChecklistProgress() {
+      const items = document.querySelectorAll('.task-item');
+      const total = items.length;
+      let completed = 0;
+      items.forEach(it => {
+        if (it.querySelector('input[type="checkbox"]').checked) completed++;
+      });
+
+      const percent = Math.round((completed / total) * 100);
+      document.getElementById('checklistPercentage').textContent = `${percent}%`;
+      document.getElementById('progressCount').textContent = `${completed}/${total} hoàn tất`;
+      document.getElementById('progressFill').style.width = `${percent}%`;
+
+      if (percent === 100) {
+        showToast("🎉 Xuất sắc! Bạn đã hoàn thành toàn bộ checklist!");
+      }
+    }
+
+    initChecklist();
+
+    // 7. Toast Notification & Copy Nginx Config
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toastMsg');
+      msg.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function copyNginxConfig() {
+      const code = document.getElementById('nginxCode').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast("Đã sao chép cấu hình Nginx vào Clipboard!");
+      }).catch(() => {
+        showToast("Không thể sao chép tự động!");
+      });
+    }
+  </script>
+</body>
+</html>
